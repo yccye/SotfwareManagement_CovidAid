@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+
+<head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="{% static 'other/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'other/css/dropzone/basic.css' %}" rel="stylesheet">
+    <link href="{% static 'other/css/dropzone/dropzone.css' %}" rel="stylesheet">
+    <link href="{% static 'other/css/style.css' %}" rel="stylesheet">
+</head>
+
+<body>
+            <div class="row wrapper border-bottom white-bg page-heading">
+                <div class="col-lg-10">
+                    <h2>CT在线检测工具</h2>
+                    <ol class="breadcrumb">
+                        <li class="active">
+                            <strong>CT Recognition Tool Online</strong>
+                        </li>
+                    </ol>
+                </div>
+                <div class="col-lg-2">
+
+                </div>
+            </div>
+        <div class="wrapper wrapper-content animated fadeIn">
+            <div class="row">
+                <div class="col-lg-12">
+                <div class="ibox float-e-margins">
+                    <div class="ibox-title">
+<!--                        <h5>图片/文件上传区域</h5>-->
+<!--                        <div class="layui-form-item">-->
+                        <label class="layui-form-label">图片/文件上传区域</label>
+                            <div class="layui-input-inline">
+                                <label for="user_id">患者编号</label><input id="user_id" type="text" placeholder="请输入患者编号" onchange="changeUserId()">
+                            </div>
+<!--                        </div>-->
+                    </div>
+                    <div class="ibox-content">
+                        <!--图片上传表单-->
+                        <form id="my-awesome-dropzone" class="dropzone" method="post" action="{% url 'diagnosis:pic_process' %}" >
+                            {% csrf_token %}
+                            <input id="user_input" type="text" name="userId" style="display: none"/>
+                            <div class="dropzone-previews">点击或拖拽上传</div>
+                            <button id = "submit" class="btn btn-primary pull-right">提交检测</button>
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            </div>
+
+
+
+
+    <!-- Mainly scripts -->
+    <script src="{% static 'other/js/jquery-2.2.3.min.js' %}"></script>
+    <script>
+        function changeUserId(){
+            document.getElementById("user_input").value = document.getElementById("user_id").value
+        }
+    </script>
+
+    <!-- DROPZONE -->
+    <script src="{% static 'other/js/dropzone/dropzone.js' %}"></script>
+    <script>
+    $("#my-awesome-dropzone").submit(function(){
+<!--        return false;-->
+    })
+    Dropzone.options.myAwesomeDropzone = {
+
+        autoProcessQueue: false,
+        acceptedFiles: ".png,.jpg,.gif,.bmp,.jpeg,.gz",
+        maxFilesize: 1,
+        parallelUploads: 10,
+        addRemoveLinks: true,
+        init: function() {
+        var submitButton = document.querySelector("#submit")
+        myDropzone = this; // closure
+
+        submitButton.addEventListener("click", function() {
+            myDropzone.processQueue();
+            // autoProcessQueue: true// Tell Dropzone to process all queued files.
+        });
+
+        // You might want to show the submit button only when
+        // files are dropped here:
+        this.on("addedfile", function() {
+          // Show submit button here and/or inform user to click it.
+        });
+
+        }
+    };
+    </script>
+</body>
+
+</html>
+

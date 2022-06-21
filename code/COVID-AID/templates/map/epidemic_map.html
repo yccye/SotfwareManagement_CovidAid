@@ -1,0 +1,462 @@
+{% load static %}
+<html>
+
+<head>
+    <title>疫情可视化</title>
+    <!-- 引入 echarts.js -->
+    <script src="http://api.map.baidu.com/api?v=2.0&ak=yHYk44ZwEFNHqQv3EDVxx5Fhqu5AKZR9"></script>
+    <script src="{% static 'map/lib/echarts.min.js' %}"></script>
+    <script src="{% static 'map/lib/bmap.min.js' %}"></script>
+    <script src="{% static 'map/lib/jquery-3.5.1.min.js' %}"></script>
+
+    <!--引入layui样式-->
+    <link rel="stylesheet" href="{% static 'layui/css/layui.css' %}">
+
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        /* .button {
+            display: inline-block;
+            width: 96px;
+            height: 32px;
+            padding: 8px 16px;
+            margin: 8px;
+            text-align: center;
+            line-height: 32px;
+            color: #ffffff;
+            background: #f44336;
+            border-radius: 5px;
+            cursor: pointer;
+            letter-spacing: 1px;
+        } */
+    </style>
+</head>
+
+<body>
+<!-- 为ECharts准备一个具备大小（宽高）的Dom -->
+<div id="main" style="height: 100%;">
+</div>
+
+{#<form>#}
+{#    {% csrf_token %}#}
+{#    经度:<br>#}
+{#    <input type="text" name="longitude">#}
+{#    <br>#}
+{#    纬度:<br>#}
+{#    <input type="text" name="latitude">#}
+{#    <br>#}
+{#    <button id="loc-btn">提交</button>#}
+{#</form>#}
+
+<script type="text/javascript" src="{% static 'layui/layui.js' %}"></script>
+{#<script src="{% static 'map/js/selectLocation.js' %}"></script>#}
+<script type="text/javascript">
+    var chartDom = document.getElementById('main');
+    var myChart = echarts.init(chartDom);
+
+    var selectLocation = {
+        callbackFun: function () {
+            location.reload();
+        }
+    }
+    // var option;
+
+    var lines = [];
+    //访问本地文件获取json数据
+    $.ajax({
+        type: "get",
+        url: "{% static 'map/json/pandemic-tracks.json' %}",
+        dataType: 'json',
+        beforeSend: function (xmlHttp) {
+            xmlHttp.setRequestHeader("If-Modified-Since", "0");
+            xmlHttp.setRequestHeader("Cache-Control", "no-cache");
+        },
+        success: function (data) {
+            console.log(data);
+            // var obj = JSON.parse(data);
+            // console.log(obj);
+
+            var color_list = [
+                '#d9133c',
+                '#d7133d',
+                '#d5133e',
+                '#d3133f',
+                '#d1133f',
+                '#ce1240',
+                '#cc1241',
+                '#ca1242',
+                '#c81243',
+                '#c61243',
+                '#c41144',
+                '#c11145',
+                '#bf1146',
+                '#bd1146',
+                '#bb1147',
+                '#b91048',
+                '#b61049',
+                '#b4104a',
+                '#b2104a',
+                '#b0104b',
+                '#ae0f4c',
+                '#ac0f4d',
+                '#a90f4d',
+                '#a70f4e',
+                '#a50f4f',
+                '#a30e50',
+                '#a10e51',
+                '#9f0e51',
+                '#9c0e52',
+                '#9a0e53',
+                '#980d54',
+                '#960d55',
+                '#940d55',
+                '#910d56',
+                '#8f0d57',
+                '#8d0c58',
+                '#8b0c58',
+                '#890c59',
+                '#870c5a',
+                '#840c5b',
+                '#820b5c',
+                '#800b5c',
+                '#7e0b5d',
+                '#7c0b5e',
+                '#790b5f',
+                '#770a5f',
+                '#750a60',
+                '#730a61',
+                '#710a62',
+                '#6f0a63',
+                '#6c0963',
+                '#6a0964',
+                '#680965',
+                '#660966',
+                '#640967',
+                '#620867',
+                '#5f0868',
+                '#5d0869',
+                '#5b086a',
+                '#59086a',
+                '#57076b',
+                '#54076c',
+                '#52076d',
+                '#50076e',
+                '#4e076e',
+                '#4c066f',
+                '#4a0670',
+                '#470671',
+                '#450671',
+                '#430672',
+                '#410573',
+                '#3f0574',
+                '#3c0575',
+                '#3a0575',
+                '#380576',
+                '#360477',
+                '#340478',
+                '#320479',
+                '#2f0479',
+                '#2d047a',
+                '#2b037b',
+                '#29037c',
+                '#27037c',
+                '#25037d',
+                '#22037e',
+                '#20027f',
+                '#1e0280',
+                '#1c0280',
+                '#1a0281',
+                '#170282',
+                '#150183',
+                '#130183',
+                '#110184',
+                '#0f0185',
+                '#0d0186',
+                '#0a0087',
+                '#080087',
+                '#060088',
+                '#040089',
+                '#02008a',
+            ]
+
+            lines = lines.concat(data);
+            let interval = Math.floor(100 / lines.length);
+            for (let i = 0; i < lines.length; i++) {
+                let obj = new Object();
+                // obj.color = getRandomColor();
+                obj.color = color_list[i * interval];
+                obj.width = 1;
+                obj.opacity = 0.8;
+                lines[i].lineStyle = obj;
+            }
+            console.log(lines);
+
+            //点数组
+            let points = new Array();
+            for (let i = 0; i < lines.length; i++) {
+                let item = lines[i];
+                for (let j = 0; j < item.coords.length; j++) {
+                    let obj = new Object();
+                    obj.name = item.name;
+                    obj.value = item.coords[j];
+                    obj.color = color_list[i * interval];
+                    points.push(obj);
+                }
+            }
+
+            console.log(points);
+
+            // console.log(lines);
+            console.log(lines[0].coords.length)
+            myChart.setOption({
+                bmap: {
+                    center: [103.99909675506, 30.558569710854],
+                    zoom: 10,
+                    roam: true,
+                    mapStyle: {
+                        styleJson: [{
+                            'featureType': 'water',
+                            'elementType': 'all',
+                            'stylers': {
+                                'color': '#d1d1d1'
+                            }
+                        }, {
+                            'featureType': 'land',
+                            'elementType': 'all',
+                            'stylers': {
+                                'color': '#f3f3f3'
+                            }
+                        }, {
+                            'featureType': 'railway',
+                            'elementType': 'all',
+                            'stylers': {
+                                'visibility': 'off'
+                            }
+                        }, {
+                            'featureType': 'highway',
+                            'elementType': 'all',
+                            'stylers': {
+                                'color': '#fdfdfd'
+                            }
+                        }, {
+                            'featureType': 'highway',
+                            'elementType': 'labels',
+                            'stylers': {
+                                'visibility': 'off'
+                            }
+                        }, {
+                            'featureType': 'arterial',
+                            'elementType': 'geometry',
+                            'stylers': {
+                                'color': '#fefefe'
+                            }
+                        }, {
+                            'featureType': 'arterial',
+                            'elementType': 'geometry.fill',
+                            'stylers': {
+                                'color': '#fefefe'
+                            }
+                        }, {
+                            'featureType': 'green',
+                            'elementType': 'all',
+                            'stylers': {
+                                'visibility': 'off'
+                            }
+                        }, {
+                            'featureType': 'subway',
+                            'elementType': 'all',
+                            'stylers': {
+                                'visibility': 'off'
+                            }
+                        }, {
+                            'featureType': 'manmade',
+                            'elementType': 'all',
+                            'stylers': {
+                                'color': '#d1d1d1'
+                            }
+                        }, {
+                            'featureType': 'local',
+                            'elementType': 'all',
+                            'stylers': {
+                                'color': '#d1d1d1'
+                            }
+                        }, {
+                            'featureType': 'arterial',
+                            'elementType': 'labels',
+                            'stylers': {
+                                'visibility': 'off'
+                            }
+                        }, {
+                            'featureType': 'boundary',
+                            'elementType': 'all',
+                            'stylers': {
+                                'color': '#fefefe'
+                            }
+                        }, {
+                            'featureType': 'building',
+                            'elementType': 'all',
+                            'stylers': {
+                                'color': '#d1d1d1'
+                            }
+                        }, {
+                            'featureType': 'label',
+                            'elementType': 'labels.text.fill',
+                            'stylers': {
+                                'color': '#999999'
+                            }
+                        }]
+                    }
+
+                },
+                series: [
+                    {
+                        type: 'lines',
+                        coordinateSystem: 'bmap',
+                        polyline: true,
+                        data: lines,
+                        silent: true,
+                        /*
+                        lineStyle: {
+                            color: 'red',
+                            // color: 'rgb(200, 35, 45)',
+                            opacity: 0.8,
+                            width: 1
+                        },
+                         */
+                        progressiveThreshold: 500,
+                        progressive: 200
+                    },
+                    {
+                        type: 'scatter',
+                        coordinateSystem: 'bmap',
+                        polyline: true,
+                        data: points,
+                        symbolSize: 5,
+                            itemStyle: {
+                                normal: {
+                                    // shadowBlur: 10,
+                                    // shadowColor: 'rgba(120, 36, 50, 0.5)',
+                                    // shadowOffsetY: 5,
+                                    color: function (arg) {
+                                        // console.log(arg);
+                                        return arg.data.color;
+                                    }
+                                }
+                            },
+                        emphasis: {
+                            show: false,
+                            position: 'start',
+                            formatter: '{a}-{b}--{c}'
+                        }
+                    },
+
+                ]
+            });
+
+
+            // option && myChart.setOption(option);
+            var bmap = myChart.getModel().getComponent('bmap').getBMap();
+
+            var geolocation = new BMap.Geolocation();//定位
+            geolocation.getCurrentPosition(function (r) {
+                if (this.getStatus() == BMAP_STATUS_SUCCESS) {
+                    var mk = new BMap.Marker(r.point, {
+                        title: "点击上传当前位置"
+                    });
+
+                    mk.addEventListener("click", function (e) {
+                        $.ajax({
+                            type: 'post',
+                            url: "{% url 'epidemic_map:epidemic-map' %}",
+                            data: {
+                                longitude: r.point.lng,
+                                latitude: r.point.lat,
+                                csrfmiddlewaretoken: '{{ csrf_token }}'
+                            },
+                            dataType: "json",
+                            success: function (data) {
+                                console.log(data.status);
+                            }
+                        });
+                    })
+
+                    bmap.addOverlay(mk);
+                    bmap.panTo(r.point);
+                    InitMAP(r.point.lng, r.point.lat)
+                    // alert('您的位置：' + r.point.lng + ',' + r.point.lat);
+                } else {
+                    alert('failed' + this.getStatus());
+                    InitMAP(116.331398, 39.897445)
+                }
+            });
+
+            function InitMAP(X, Y) {
+                var point = new BMap.Point(X, Y);//var point = new BMap.Point(116.331398,39.897445);
+                bmap.centerAndZoom(point, 12);
+            }
+
+            //设置自定义控件
+            function myControl() {
+                //设置默认停靠与偏移量
+                this.defaultAnchor = BMAP_ANCHOR_TOP_LEFT;
+                this.defaultOffset = new BMap.Size(20, 40 + 50 * 3);
+            }
+
+            //将构造函数继承与BMap.Control();
+            myControl.prototype = new BMap.Control();
+
+            myControl.prototype.initialize = function (map) {
+                var i = document.createElement("i");
+                i.style = "font-size: 30px; color: #333333;background:#888888;border-radius:10px";
+                i.className = "layui-icon " + "layui-icon-set";
+
+                //绑定点击事件
+                i.onclick = function (e) {
+                    //console.log(e);
+                    let mapUrl = "{% url 'epidemic_map:location-upload' %}";
+                    let winHeight = 800;
+                    let winWidth = 1024;
+                    let winTop = 50;
+                    let winLeft = 100;
+
+                    window.open(mapUrl, 'selectLocation', 'fullscreen=0,directories=0,location=0,menubar=0,resizable=0,scrollbars=0,status=0,titlebar=0,toolbar=0,' +
+                        'height=' + winHeight + ',width=' + winWidth + ',top=' + winTop + ',left=' + winLeft + '');
+
+                };
+
+                //将dom添加到地图容器中
+                map.getContainer().appendChild(i);
+
+                //将dom元素返回
+                return i;
+            }
+            //添加自定义控件
+            bmap.addControl(new myControl());
+
+        }
+    })
+
+    {#document.getElementById("loc-btn").onclick = function (e) {#}
+    {#    $.ajax({#}
+    {#        type: 'post',#}
+    {#        url: "{% url 'epidemic_map:epidemic-map' %}",#}
+    {#        data: {#}
+    {#            longitude: $('input[name="longitude"]').val(),#}
+    {#            latitude: $('input[name="latitude"]').val(),#}
+    {#            csrfmiddlewaretoken: '{{ csrf_token }}'#}
+    {#        },#}
+    {#        dataType: "json",#}
+    {#        success: function (data) {#}
+    {#            console.log(data.status);#}
+    {#        }#}
+    {#    });#}
+    {# } #}
+</script>
+</body>
+
+</html>
